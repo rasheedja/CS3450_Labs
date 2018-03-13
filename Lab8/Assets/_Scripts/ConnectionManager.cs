@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ConnectionManager : MonoBehaviour
 {
@@ -50,16 +51,16 @@ public class ConnectionManager : MonoBehaviour
 		if (PhotonNetwork.connectedAndReady && photonRoomToJoinText.text.Length > 0) // check there is a name entered before joining
 		{
 			PhotonNetwork.JoinRoom (photonRoomToJoinText.text);
-		}
-	}
+        }
+    }
 
 	public void ButtonHandlerLeaveRoom() 
 	{
 		if (PhotonNetwork.connectedAndReady) 
 		{
 			PhotonNetwork.LeaveRoom();
-		}
-	}
+        }
+    }
 
 	// EVENT CALLBACKS
 
@@ -93,10 +94,10 @@ public class ConnectionManager : MonoBehaviour
 	{
 		Debug.Log("OnJoinedRoom: " + PhotonNetwork.room.name);	
 		UpdateRoomInfo ();
-        PhotonNetwork.Instantiate("NetworkedCube", new Vector3(Random.Range(-4, 5), 4, Random.Range(-4, 5)), Quaternion.identity, 0);
-	}
+        GameObject snowboarder = PhotonNetwork.Instantiate("NetworkedSnowboarder", new Vector3(123.3915f, 0.1103587f, 31.88877f), Quaternion.identity, 0);
+    }
 
-	void OnPhotonPlayerConnected() {
+    void OnPhotonPlayerConnected() {
 		Debug.Log("OnPhotonPlayerConnected");
 		UpdateRoomInfo ();
 	}
@@ -118,6 +119,5 @@ public class ConnectionManager : MonoBehaviour
 		Debug.Log("OnLeftRoom");
 		photonStatusText.text = "Status: Left Room!";
 		UpdateRoomInfo ();
-	}
-
+    }
 }

@@ -1,13 +1,14 @@
 using UnityEngine;
 using System.Collections;
 
-public class PlayerAnimationController : MonoBehaviour 
+public class PlayerAnimationController : Photon.MonoBehaviour 
 {
 	public bool IsGrabbing { get; private set; }
 	public bool IsFallenOver { get; private set; }
 	
 	private PlayerMovementController playerController;
-	private GameObject model;
+	private CameraController cameraController;
+    private GameObject model;
 	
 	private string[] grabList;
 	private string[] bailList;
@@ -17,10 +18,17 @@ public class PlayerAnimationController : MonoBehaviour
 	public bool MakeRandomlyFallOverInMenu = false;
 	public AudioSource audio;
 
-	void Awake ()
+    Vector3 correctPlayerPos;
+    Quaternion correctPlayerRot;
+
+    void Awake ()
 	{
-		playerController = GetComponent<PlayerMovementController>();
-		model = transform.Find("model").gameObject;
+        correctPlayerPos = transform.position;
+        correctPlayerRot = transform.rotation;
+
+        playerController = GetComponent<PlayerMovementController>();
+        cameraController = GameObject.Find("Camera").GetComponent<CameraController>();
+        model = transform.Find("model").gameObject;
 		
 		grabList = new string[3];
 		grabList[0] = "nosegrab";
@@ -30,41 +38,81 @@ public class PlayerAnimationController : MonoBehaviour
 		bailList = new string[2];
 		bailList[0] = "fall1";
 		bailList[1] = "fall2";
-	}
 
-	IEnumerator Start() {
+        if (photonView.isMine)
+        {
+            cameraController.target = transform;
+        }
+    }
+
+    IEnumerator Start() {
 		if (MakeRandomlyFallOverInMenu) { 
 			while (true) {
 				yield return new WaitForSeconds (Random.Range (5, 15));
-				StartCoroutine (PlayFalloverAnimation ());
+                photonView.RPC("PlayFalloverAnimationRPC", PhotonTargets.All);
 			}
 		} else yield return null; // IEnumerator needs something to return so delay by one frame
 	}
 	
 	void Update () 
 	{
-		if (playerController.grounded)
-		{
-			// land whilst bailing or attempt grab on floor
-			if (IsGrabbing || (Input.GetKeyDown(KeyCode.G) && !IsFallenOver))
-			{
-				IsGrabbing = false;
-				StopAllCoroutines();
-				StartCoroutine(PlayFalloverAnimation());
-			}
-		}
-		else
-		{
-			// if player presses the G key whilst they're not grabbing
-			if (!IsGrabbing && Input.GetKeyDown(KeyCode.G))
-			{
-				StartCoroutine(PlayGrabAnimation());
-			}
-		}
-	}
-	
-	
-	IEnumerator PlayGrabAnimation ()
+        if (photonView.isMine)
+        {
+            if (playerController.grounded)
+            {
+                // land whilst bailing or attempt grab on floor
+                if (IsGrabbing || (Input.GetKeyDown(KeyCode.G) && !IsFallenOver))
+                {
+                    IsGrabbing = false;
+                    StopAllCoroutines();
+                    photonView.RPC("PlayFalloverAnimationRPC", PhotonTargets.All);
+                }
+            }
+            else
+            {
+                // if player presses the G key whilst they're not grabbing
+                if (!IsGrabbing && Input.GetKeyDown(KeyCode.G))
+                {
+                    photonView.RPC("PlayGrabAnimationRPC", PhotonTargets.All);
+                }
+            }
+        }
+        else
+        {
+            transform.position = Vector3.Lerp(transform.position, correctPlayerPos, Time.deltaTime * 10f);
+            transform.rotation = Quaternion.Lerp(transform.rotation, correctPlayerRot, Time.deltaTime * 10f);
+        }
+    }
+
+    void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        if (stream.isWriting)
+        {
+            // We own this player: send the others our data
+            stream.SendNext(transform.position);
+            stream.SendNext(transform.rotation);
+        }
+        else
+        {
+            // Network player, receive data
+            correctPlayerPos = (Vector3)stream.ReceiveNext();
+            correctPlayerRot = (Quaternion)stream.ReceiveNext();
+        }
+    }
+
+    [PunRPC]
+    public void PlayFalloverAnimationRPC()
+    {
+        StartCoroutine(PlayFalloverAnimation());
+    }
+
+    [PunRPC]
+    public void PlayGrabAnimationRPC()
+    {
+        StartCoroutine(PlayGrabAnimation());
+    }
+
+    IEnumerator PlayGrabAnimation ()
 	{
 		IsGrabbing = true;
 		

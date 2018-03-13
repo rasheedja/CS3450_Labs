@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
- 
+using UnityEngine.SceneManagement;
+
 public class CameraController : MonoBehaviour 
 {
     // the target that the camera will follow
@@ -10,21 +11,23 @@ public class CameraController : MonoBehaviour
     public int distanceFromTarget = 5;
     
 	// vertical displacement
-	public float displacementY = 1.5f;
+	public float displacementY = 0f;
      
     // easing variable
     public float easing = 0.1f;
      
     // variable to track the new position of the camera
     private Vector3 newPos;
-	
-	
-    void Update () 
+
+    void Update()
     {
-        newPos = target.position - (transform.forward * distanceFromTarget);
-		newPos.y += displacementY;
-         
-        transform.position += (newPos - transform.position) * easing;
-        transform.LookAt(target);
+        if (target != null)
+        {
+            newPos = target.position - (transform.forward * distanceFromTarget);
+            newPos.y += displacementY - 1;
+
+            transform.position += (newPos - transform.position) * easing;
+            transform.LookAt(target);
+        }
     }
 }

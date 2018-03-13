@@ -43,4 +43,6 @@ MonoBehaviour:
   - RequestForPickupTimes
   - TaggedPlayer
   - ChangeColour
+  - PlayFalloverAnimationRPC
+  - PlayGrabAnimationRPC
   DisableAutoOpenWizard: 1
